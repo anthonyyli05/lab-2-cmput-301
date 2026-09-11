@@ -29,6 +29,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.listycity.ui.theme.ListyCityTheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Color
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +44,7 @@ class MainActivity : ComponentActivity() {
                     CityListScreen(
                         cities = cityRepository.cities,
                         onAddCity = {cityRepository.addCity( it )},
+                        onDeleteCity = {cityRepository.removeCity(it)},
                         modifier = Modifier.padding(paddingValues = innerPadding)
 
                     )
@@ -53,10 +57,12 @@ class MainActivity : ComponentActivity() {
 fun CityListScreen(
     cities: List <String>,
     onAddCity: (String)-> Unit,
+    onDeleteCity: (String) -> Unit,
     modifier: Modifier = Modifier
 
 ) {
     var newCityName by remember { mutableStateOf(value = "") }
+    var selectedCity by remember {mutableStateOf<String?>(null) }
 
     Column(modifier = modifier.fillMaxSize()) {
         Row() {
@@ -73,21 +79,50 @@ fun CityListScreen(
                     newCityName = ""
                 }
 
-            }) {Text("Add City")}
+            }) {Text("Add City")
+            }
+        }
+        Button(
+            onClick = {
+                selectedCity?.let {
+                    onDeleteCity(it)
+                    selectedCity = null
+                }
+            },
+            enabled = selectedCity != null,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Delete City")
         }
 
-        LazyColumn(modifier = modifier.fillMaxSize()) {
-            items(cities) { city -> CityRow(city = city)
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(cities) { city ->
+                CityRow(
+                    city = city,
+                    isSelected = city == selectedCity,
+                    onClick = { selectedCity = city }
+                )
             }
         }
     }
 }
 @Composable
-fun CityRow(city: String){
+fun CityRow(
+    city: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
     Text(
         text = city,
         fontSize = 28.sp,
-        modifier = Modifier.fillMaxWidth().padding(horizontal=18.dp, vertical=14.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .background(
+                if (isSelected) Color.LightGray
+                else Color.Transparent
+            )
+            .padding(horizontal = 18.dp, vertical = 14.dp)
     )
 }
 
@@ -117,5 +152,8 @@ class CityRepository {
 
     fun addCity(city: String){
         _cities.add(city)
+    }
+    fun removeCity(city: String){
+        _cities.remove(city)
     }
 }
